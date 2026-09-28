@@ -28,4 +28,4 @@ OMEN is a hackathon prototype and does not claim perfect isolation or universal 
 ## Live prototype
 https://omen-hmgqez.v2.appdeploy.ai/
 
-The hosted prototype executes the authorization cases on the backend. Judges change the candidate authorization guards, not the observed outcome. OMEN computes baseline and candidate behavior, runs the visible and counterfactual cases, preserves the resulting evidence in a hash-linked audit trace, and applies the deterministic merge policy.
+The hosted prototype accepts a task contract and proposed unified diff against the built-in authorization fixture. OMEN applies the recognized patch, computes baseline and candidate behavior, executes the visible expired-session test and revoked-but-unexpired counterfactual, preserves the resulting evidence in a SHA-256 hash-linked audit trace, and then applies the deterministic Policy Plane. Unsupported patches return `ASK_CLARIFYING_QUESTION` rather than fabricated evidence.
