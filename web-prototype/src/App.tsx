@@ -2,17 +2,27 @@ import { useState } from 'react';
 import { api } from '@appdeploy/client';
 import { Check, X, RotateCcw } from 'lucide-react';
 
+type Decision =
+  | 'SAFE_TO_MERGE'
+  | 'MERGE_WITH_CAVEAT'
+  | 'ASK_CLARIFYING_QUESTION'
+  | 'DO_NOT_MERGE';
+
+type Observation = {
+  name: string;
+  baselineStatus: number;
+  candidateStatus: number;
+  expectedStatus: number;
+  passed: boolean;
+};
+
 type RunResult = {
   traceId: string;
-  decision: 'SAFE_TO_MERGE' | 'DO_NOT_MERGE';
+  patchStatus: 'applied' | 'rejected';
+  decision: Decision;
+  baselineSource: string;
   candidateSource: string;
-  observations: Array<{
-    name: string;
-    baselineStatus: number;
-    candidateStatus: number;
-    expectedStatus: number;
-    passed: boolean;
-  }>;
+  observations: Observation[];
   audit: Array<{
     sequence: number;
     event: string;
@@ -20,40 +30,44 @@ type RunResult = {
     previous: string;
   }>;
   reasons: string[];
+  testedBoundary: string;
+  uncertainty: string;
 };
 
-type Candidate = {
-  denyExpired: boolean;
-  denyRevoked: boolean;
-  requireValidSignature: boolean;
-};
+const taskDefault =
+  'Fix the expired-session authorization bug without allowing invalid sessions to access protected resources.';
 
-const defaultCandidate: Candidate = {
-  denyExpired: true,
-  denyRevoked: false,
-  requireValidSignature: true,
-};
+const readmeDemoPatch = `--- a/auth.py
++++ b/auth.py
+@@ -7,3 +7,5 @@
+ def authorize(token):
+     session = SESSIONS[token]
++    if session["expired"]:
++        return 401
+     return 200
+`;
+
+const remediatedPatch = `--- a/auth.py
++++ b/auth.py
+@@ -7,3 +7,7 @@
+ def authorize(token):
+     session = SESSIONS[token]
++    if session["expired"]:
++        return 401
++    if session["revoked"]:
++        return 401
+     return 200
+`;
 
 function App() {
-  const [candidate, setCandidate] = useState<Candidate>(defaultCandidate);
+  const [task, setTask] = useState(taskDefault);
+  const [patch, setPatch] = useState(readmeDemoPatch);
   const [result, setResult] = useState<RunResult | null>(null);
   const [running, setRunning] = useState(false);
   const [message, setMessage] = useState('');
 
-  const setRule = (key: keyof Candidate, value: boolean) => {
-    setCandidate(current => ({ ...current, [key]: value }));
-    setResult(null);
-    setMessage('');
-  };
-
-  const loadVulnerable = () => {
-    setCandidate(defaultCandidate);
-    setResult(null);
-    setMessage('');
-  };
-
-  const loadRemediated = () => {
-    setCandidate({ denyExpired: true, denyRevoked: true, requireValidSignature: true });
+  const loadPatch = (value: string) => {
+    setPatch(value);
     setResult(null);
     setMessage('');
   };
@@ -62,132 +76,178 @@ function App() {
     setRunning(true);
     setMessage('');
     try {
-      const response = await api.post('/api/run', { candidate });
+      const response = await api.post('/api/evaluate-patch', { task, patch });
       setResult(response.data as RunResult);
     } catch {
+      setResult(null);
       setMessage('The evaluation did not complete. Run it again.');
     } finally {
       setRunning(false);
     }
   };
 
-  const sourceLines = [
-    'function authorize(session) {',
-    candidate.requireValidSignature ? '  if (!session.signatureValid) return 401;' : '',
-    candidate.denyExpired ? '  if (session.expired) return 401;' : '',
-    candidate.denyRevoked ? '  if (session.revoked) return 401;' : '',
-    '  return 200;',
-    '}',
-  ].filter(Boolean);
+  const blocked = result?.decision === 'DO_NOT_MERGE';
+  const allowed = result?.decision === 'SAFE_TO_MERGE';
 
   return (
     <main className="page">
       <header className="topbar">
-        <div className="brand"><strong>OMEN</strong><span>pre-merge computational assurance</span></div>
-        <a href="https://github.com/swd-dev00/Omen-AI" target="_blank" rel="noreferrer">swd-dev00 / Omen-AI</a>
+        <div className="brand">
+          <strong>OMEN</strong>
+          <span>the liability gate between an AI decision and the real-world action it can trigger</span>
+        </div>
+        <a href="https://github.com/swd-dev00/Omen-AI" target="_blank" rel="noreferrer">
+          swd-dev00 / Omen-AI
+        </a>
       </header>
 
       <section className="intro">
-        <p className="eyebrow">WORKING PROTOTYPE</p>
-        <h1>Give OMEN a candidate. Let OMEN produce the evidence.</h1>
+        <p className="eyebrow">AI-ASSISTED SOFTWARE DEVELOPMENT PROTOTYPE</p>
+        <h1>What should the system have to prove before the action proceeds?</h1>
         <p>
-          Change the authorization patch below. The backend executes the baseline and candidate against
-          the visible requirement and a revoked-session counterfactual. You do not enter the test result.
+          OMEN separates execution, evidence preservation, and policy. The candidate patch is evaluated
+          against the visible requirement and a bounded neighboring failure state before the Policy Plane
+          is allowed to issue a merge decision.
         </p>
       </section>
 
       <section className="workspace">
-        <section className="panel">
-          <div className="panelTitle"><span>CANDIDATE PATCH</span><h2>Authorization guards</h2></div>
-
-          <div className="ruleList">
-            <label>
-              <input type="checkbox" checked={candidate.requireValidSignature} onChange={e => setRule('requireValidSignature', e.target.checked)} />
-              <span><strong>Require valid signature</strong><small>Reject an invalid token signature.</small></span>
-            </label>
-            <label>
-              <input type="checkbox" checked={candidate.denyExpired} onChange={e => setRule('denyExpired', e.target.checked)} />
-              <span><strong>Deny expired sessions</strong><small>This is the visible acceptance requirement.</small></span>
-            </label>
-            <label>
-              <input type="checkbox" checked={candidate.denyRevoked} onChange={e => setRule('denyRevoked', e.target.checked)} />
-              <span><strong>Deny revoked sessions</strong><small>This is the neighboring counterfactual state.</small></span>
-            </label>
+        <section className="panel inputPanel">
+          <div className="panelTitle">
+            <span>REQUEST</span>
+            <h2>Candidate change</h2>
           </div>
 
-          <div className="quick">
-            <button onClick={loadVulnerable}>Load visible-test-only patch</button>
-            <button onClick={loadRemediated}>Load remediated patch</button>
+          <label className="field">
+            <span>Task contract</span>
+            <textarea
+              className="task"
+              value={task}
+              onChange={e => {
+                setTask(e.target.value);
+                setResult(null);
+              }}
+            />
+          </label>
+
+          <div className="patchHeader">
+            <div>
+              <span>PROPOSED UNIFIED DIFF</span>
+              <small>Built-in demo repository: auth.py</small>
+            </div>
+            <div className="quick">
+              <button onClick={() => loadPatch(readmeDemoPatch)}>README demo patch</button>
+              <button onClick={() => loadPatch(remediatedPatch)}>Remediated patch</button>
+            </div>
           </div>
 
-          <div className="source">
-            <div>candidate/auth.ts</div>
-            <pre>{sourceLines.join('\n')}</pre>
-          </div>
+          <textarea
+            className="patchEditor"
+            spellCheck={false}
+            value={patch}
+            onChange={e => {
+              setPatch(e.target.value);
+              setResult(null);
+            }}
+          />
 
           <button className="run" onClick={run} disabled={running}>
-            {running ? 'Running execution + audit + policy…' : 'Run OMEN'}
+            {running ? 'Executing OMEN evaluation…' : 'Run OMEN'}
           </button>
-          <button className="reset" onClick={loadVulnerable}><RotateCcw size={14}/> Reset</button>
+          <button className="reset" onClick={() => loadPatch(readmeDemoPatch)}>
+            <RotateCcw size={14} /> Reset README demo
+          </button>
           {message && <p className="error">{message}</p>}
         </section>
 
-        <section className="panel results">
-          <div className="panelTitle"><span>OMEN OUTPUT</span><h2>Observed evidence</h2></div>
+        <section className="panel outputPanel">
+          <div className="panelTitle">
+            <span>EVIDENCE</span>
+            <h2>Request → execution → evidence → policy</h2>
+          </div>
 
           {!result ? (
             <div className="empty">
-              <strong>Nothing has been evaluated yet.</strong>
-              <span>Run OMEN. The backend will execute the test cases and populate this side.</span>
+              <strong>No evaluation yet.</strong>
+              <span>Run the candidate patch. OMEN will establish the observations, preserve them, then apply policy.</span>
             </div>
           ) : (
             <>
-              <div className={result.decision === 'DO_NOT_MERGE' ? 'verdict blocked' : 'verdict allowed'}>
-                <span>POLICY DECISION</span>
-                <strong>{result.decision}</strong>
-                <small>trace {result.traceId.slice(0, 16)}</small>
-              </div>
+              <section className="plane">
+                <div className="planeHeading">
+                  <span>EXECUTION PLANE</span>
+                  <small>Establishes what actually happened. It cannot authorize the merge.</small>
+                </div>
 
-              <div className="observations">
-                {result.observations.map(o => (
-                  <div className="observation" key={o.name}>
+                <div className="patchStatus">
+                  <span>candidate patch</span>
+                  <strong>{result.patchStatus.toUpperCase()}</strong>
+                </div>
+
+                {result.observations.map(observation => (
+                  <div className="observation" key={observation.name}>
                     <div className="obsHead">
-                      <strong>{o.name}</strong>
-                      <span className={o.passed ? 'pass' : 'fail'}>{o.passed ? <Check size={14}/> : <X size={14}/>} {o.passed ? 'PASS' : 'FAIL'}</span>
+                      <strong>{observation.name}</strong>
+                      <span className={observation.passed ? 'pass' : 'fail'}>
+                        {observation.passed ? <Check size={14} /> : <X size={14} />}
+                        {observation.passed ? 'PASS' : 'FAIL'}
+                      </span>
                     </div>
                     <div className="matrix">
-                      <span>baseline <b>{o.baselineStatus}</b></span>
-                      <span>candidate <b>{o.candidateStatus}</b></span>
-                      <span>expected <b>{o.expectedStatus}</b></span>
+                      <span>baseline <b>{observation.baselineStatus}</b></span>
+                      <span>candidate <b>{observation.candidateStatus}</b></span>
+                      <span>expected <b>{observation.expectedStatus}</b></span>
                     </div>
                   </div>
                 ))}
-              </div>
+              </section>
 
-              <div className="reason">
-                <span>POLICY BASIS</span>
-                {result.reasons.map(reason => <p key={reason}>{reason}</p>)}
-              </div>
+              <section className="plane">
+                <div className="planeHeading">
+                  <span>AUDIT PLANE</span>
+                  <small>Preserves the evidence in an append-only SHA-256 hash chain.</small>
+                </div>
+                <div className="audit">
+                  {result.audit.map(item => (
+                    <div className="auditRow" key={item.digest}>
+                      <small>{String(item.sequence).padStart(2, '0')}</small>
+                      <code>{item.event}</code>
+                      <code>{item.digest.slice(0, 12)}…</code>
+                    </div>
+                  ))}
+                </div>
+              </section>
 
-              <div className="audit">
-                <div className="auditLabel">HASH-LINKED AUDIT TRACE</div>
-                {result.audit.map(item => (
-                  <div className="auditRow" key={item.digest}>
-                    <small>{String(item.sequence).padStart(2, '0')}</small>
-                    <code>{item.event}</code>
-                    <code>{item.digest.slice(0, 11)}…</code>
-                  </div>
-                ))}
-              </div>
+              <section className="plane policyPlane">
+                <div className="planeHeading">
+                  <span>POLICY PLANE</span>
+                  <small>Evaluates preserved evidence and owns the final merge decision.</small>
+                </div>
+
+                <div className={blocked ? 'verdict blocked' : allowed ? 'verdict allowed' : 'verdict caveat'}>
+                  <span>POLICY DECISION</span>
+                  <strong>{result.decision}</strong>
+                  <small>trace {result.traceId.slice(0, 18)}</small>
+                </div>
+
+                <div className="reasons">
+                  {result.reasons.map(reason => <p key={reason}>{reason}</p>)}
+                </div>
+              </section>
+
+              <section className="boundary">
+                <div><span>TESTED BOUNDARY</span><p>{result.testedBoundary}</p></div>
+                <div><span>UNCERTAINTY</span><p>{result.uncertainty}</p></div>
+              </section>
             </>
           )}
         </section>
       </section>
 
       <footer>
-        <span>Execution runs the cases.</span>
-        <span>Audit preserves the observations.</span>
-        <span>Policy owns the verdict.</span>
+        <span>Execution tells us what happened.</span>
+        <span>Audit preserves what happened.</span>
+        <span>Policy decides what is allowed.</span>
       </footer>
     </main>
   );

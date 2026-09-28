@@ -1,70 +1,70 @@
 [
   {
-    "name": "OMEN executes vulnerable candidate and blocks merge",
+    "name": "README demo patch passes visible test but is blocked by counterfactual",
     "sanity": true,
     "viewport": "desktop",
     "covers": [
-      "POST /api/run",
+      "POST /api/evaluate-patch",
+      "candidate patch application",
       "baseline execution",
-      "candidate execution",
-      "visible test",
+      "visible test execution",
       "counterfactual probe",
-      "audit trace",
+      "audit chain",
       "policy decision"
     ],
-    "description": "Verifies OMEN computes the observations itself for the default visible-test-only patch and blocks it on the revoked-session counterfactual.",
+    "description": "Verifies the live prototype reproduces the exact README demo: expired-session fix passes while the revoked-session counterfactual remains authorized and forces DO_NOT_MERGE.",
     "steps": [
-      "Leave Deny expired sessions enabled and Deny revoked sessions disabled",
+      "Leave the README demo patch loaded",
       "Click Run OMEN",
-      "Inspect the observations and policy decision"
+      "Inspect Execution Plane, Audit Plane, and Policy Plane"
     ],
-    "expected": "The visible expired-session test passes with candidate 401, the revoked-session counterfactual fails with candidate 200, the audit trace is populated, and the decision is DO_NOT_MERGE."
+    "expected": "The candidate patch is applied, the visible expired-session test shows PASS with candidate 401, the revoked-session counterfactual shows FAIL with candidate 200, the audit trace is populated, and Policy returns DO_NOT_MERGE."
   },
   {
-    "name": "OMEN executes remediated candidate and allows merge",
+    "name": "Remediated patch satisfies the bounded evidence",
     "viewport": "desktop",
     "covers": [
-      "POST /api/run",
-      "candidate rule change",
-      "safe policy decision"
+      "POST /api/evaluate-patch",
+      "candidate patch application",
+      "SAFE_TO_MERGE"
     ],
-    "description": "Verifies enabling revoked-session denial changes executed candidate behavior and the policy result.",
+    "description": "Verifies a patch that rejects both expired and revoked sessions changes the executed evidence and bounded policy result.",
     "steps": [
-      "Click Load remediated patch",
+      "Click Remediated patch",
       "Click Run OMEN",
-      "Inspect both observations and the final decision"
+      "Inspect both executed observations and Policy Plane"
     ],
-    "expected": "Both candidate observations are 401 and PASS, and the decision is SAFE_TO_MERGE."
+    "expected": "Both observations show PASS with candidate 401 and the bounded policy decision is SAFE_TO_MERGE."
   },
   {
-    "name": "OMEN blocks a candidate that fails the visible requirement",
+    "name": "Unsupported patch preserves uncertainty instead of inventing a verdict",
     "viewport": "mobile",
     "covers": [
-      "editable candidate controls",
-      "visible requirement failure",
-      "responsive workflow",
-      "POST /api/run"
+      "patch validation",
+      "ASK_CLARIFYING_QUESTION",
+      "uncertainty preservation",
+      "responsive workflow"
     ],
-    "description": "Verifies disabling the expired-session guard causes OMEN to execute a failing visible test and block the candidate.",
+    "description": "Verifies OMEN does not fabricate evidence when the candidate cannot be applied to the bounded demo repository.",
     "steps": [
-      "Turn off Deny expired sessions",
+      "Replace the patch with unrelated text",
       "Click Run OMEN",
-      "Inspect the visible test and final decision"
+      "Inspect Policy Plane and uncertainty"
     ],
-    "expected": "The visible expired-session candidate status is 200, the visible test shows FAIL, and the decision is DO_NOT_MERGE."
+    "expected": "The patch is rejected and Policy returns ASK_CLARIFYING_QUESTION with no fabricated execution observations."
   },
   {
-    "name": "Evaluation API failure is visible",
+    "name": "Evaluation backend failure is visible",
     "viewport": "desktop",
     "covers": [
-      "backend failure handling",
-      "user-visible error state"
+      "backend error handling",
+      "user-visible failure state"
     ],
-    "description": "Verifies a backend run failure is shown instead of leaving a stale result on screen.",
+    "description": "Verifies an evaluation API failure is surfaced instead of displaying stale evidence.",
     "qa_faults": [
       {
         "method": "POST",
-        "path": "/api/run",
+        "path": "/api/evaluate-patch",
         "status": 500,
         "body_json": {
           "error": "simulated_failure"
