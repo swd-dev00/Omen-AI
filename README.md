@@ -1,6 +1,6 @@
 ##Omen-AI
 
-OMEN is the liability gate between an AI decision and the real-world action it can trigger.
+OMEN is the liability gate between an AI decision and the real-world action it can trigger.\n\n## Working prototype\n\n**Live:** https://omen-hmgqez.v2.appdeploy.ai/\n\nThe live prototype is executable. A judge changes the candidate authorization guards and OMEN's backend runs the baseline, visible expired-session test, and revoked-session counterfactual itself. The resulting observations are committed into a SHA-256 hash-linked audit trace before the Policy Plane issues `DO_NOT_MERGE` or `SAFE_TO_MERGE`. The deployed source is checked into `web-prototype/`.
 
 OMEN started from a problem I kept running into while working on AI governance: we are giving AI systems more authority to act, but most of the accountability still begins after something goes wrong. We review logs, investigate incidents, reconstruct decisions, and then try to figure out who approved the action, what evidence existed, which policy applied, and whether the system should have been allowed to act in the first place. I wanted to move that entire conversation closer to the point of execution.
 
@@ -58,7 +58,7 @@ The important part is not the phrase DO_NOT_MERGE. The important part is that OM
 
 ##How I built it
 
-OMEN is currently written in Python and uses pytest for deterministic test execution. The prototype creates separate baseline and candidate execution contexts, applies the candidate patch, runs the declared test suite, and then evaluates bounded counterfactual conditions around the requested behavior. The strengthened build currently passes 17 out of 17 tests.
+OMEN is currently written in Python and uses pytest for deterministic test execution. The prototype creates separate baseline and candidate execution contexts, applies the candidate patch, runs the declared test suite, and then evaluates bounded counterfactual conditions around the requested behavior. The strengthened build currently passes 19 out of 19 tests.
 
 I also added support for model-assisted analysis through OpenAI-compatible APIs and an NVIDIA Nemotron integration path. The model can help identify obligations, suggest counterfactual states, interpret repository context, propose additional tests, and explain findings, but I deliberately kept it out of the final authority path.
 
@@ -120,7 +120,7 @@ If the evidence is incomplete, OMEN has to preserve that limitation. I would rat
 
 Current capabilities
 
-The strengthened prototype currently includes deterministic baseline and candidate execution, Git patch application, visible test execution, bounded counterfactual probes, failure reproduction, fail-closed policy behavior, explicit policy overrides, current-state safeguards, uncertainty reporting, a working CLI, a repeatable demo, isolated temporary working copies, POSIX resource limits, capability-checked Linux network namespaces, OpenAI-compatible model integration, an NVIDIA Nemotron integration path, and 17 passing tests.
+The strengthened prototype currently includes deterministic baseline and candidate execution, Git patch application, visible test execution, bounded counterfactual probes, failure reproduction, fail-closed policy behavior, explicit policy overrides, current-state safeguards, uncertainty reporting, a working CLI, a repeatable demo, isolated temporary working copies, POSIX resource limits, capability-checked Linux network namespaces, OpenAI-compatible model integration, an NVIDIA Nemotron integration path, and 19 passing tests.
 
 >> Running OMEN
 
@@ -134,7 +134,7 @@ Install OMEN and the development dependencies: pip install -e '.[dev]'
 
 Run the test suite: python3 -m pytest -q
 
-Expected result: 17 passed
+Expected result: 19 passed
 
 Run the deterministic demo: PYTHONPATH=. python3 demo/run_demo.py
 

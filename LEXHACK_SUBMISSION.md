@@ -23,3 +23,9 @@ Python 3.10+, pytest, OpenAI-compatible model APIs, NVIDIA Nemotron integration 
 
 ## Safety boundary
 OMEN is a hackathon prototype and does not claim perfect isolation or universal software safety. Its reports explicitly state the tested boundary and whether stronger runtime controls were actually available on the host.
+
+
+## Live prototype
+https://omen-hmgqez.v2.appdeploy.ai/
+
+The hosted prototype executes the authorization cases on the backend. Judges change the candidate authorization guards, not the observed outcome. OMEN computes baseline and candidate behavior, runs the visible and counterfactual cases, preserves the resulting evidence in a hash-linked audit trace, and applies the deterministic merge policy.
