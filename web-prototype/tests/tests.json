@@ -1,66 +1,62 @@
 [
   {
-    "name": "README demo patch passes visible test but is blocked by counterfactual",
+    "name": "README demo reproduces the blocking counterexample",
     "sanity": true,
     "viewport": "desktop",
     "covers": [
+      "OMEN logo",
       "POST /api/evaluate-patch",
-      "candidate patch application",
-      "baseline execution",
-      "visible test execution",
-      "counterfactual probe",
-      "audit chain",
-      "policy decision"
+      "visible test",
+      "revoked-session probe",
+      "audit trace",
+      "DO_NOT_MERGE"
     ],
-    "description": "Verifies the live prototype reproduces the exact README demo: expired-session fix passes while the revoked-session counterfactual remains authorized and forces DO_NOT_MERGE.",
+    "description": "Runs the default README patch through the live OMEN workflow.",
     "steps": [
-      "Leave the README demo patch loaded",
-      "Click Run OMEN",
-      "Inspect Execution Plane, Audit Plane, and Policy Plane"
+      "Confirm the OMEN logo and Security patch review screen are visible",
+      "Leave README demo patch loaded",
+      "Click Run OMEN"
     ],
-    "expected": "The candidate patch is applied, the visible expired-session test shows PASS with candidate 401, the revoked-session counterfactual shows FAIL with candidate 200, the audit trace is populated, and Policy returns DO_NOT_MERGE."
+    "expected": "The visible expired-session test is PASS, Hidden probe · revoked session is FAIL, observed response is 200, expected response is 401, the audit trace is populated, and the final decision is DO NOT MERGE."
   },
   {
-    "name": "Remediated patch satisfies the bounded evidence",
+    "name": "Remediated patch changes the executed result",
     "viewport": "desktop",
     "covers": [
+      "candidate patch switch",
       "POST /api/evaluate-patch",
-      "candidate patch application",
       "SAFE_TO_MERGE"
     ],
-    "description": "Verifies a patch that rejects both expired and revoked sessions changes the executed evidence and bounded policy result.",
+    "description": "Confirms the verdict changes because the candidate behavior changes.",
     "steps": [
       "Click Remediated patch",
-      "Click Run OMEN",
-      "Inspect both executed observations and Policy Plane"
+      "Click Run OMEN"
     ],
-    "expected": "Both observations show PASS with candidate 401 and the bounded policy decision is SAFE_TO_MERGE."
+    "expected": "The visible test and revoked-session probe both show PASS and the final decision is SAFE TO MERGE."
   },
   {
-    "name": "Unsupported patch preserves uncertainty instead of inventing a verdict",
+    "name": "Unsupported input does not manufacture evidence",
     "viewport": "mobile",
     "covers": [
       "patch validation",
       "ASK_CLARIFYING_QUESTION",
-      "uncertainty preservation",
-      "responsive workflow"
+      "responsive layout"
     ],
-    "description": "Verifies OMEN does not fabricate evidence when the candidate cannot be applied to the bounded demo repository.",
+    "description": "Confirms OMEN preserves missing evidence when the patch cannot be applied.",
     "steps": [
-      "Replace the patch with unrelated text",
-      "Click Run OMEN",
-      "Inspect Policy Plane and uncertainty"
+      "Replace the candidate patch with unrelated text",
+      "Click Run OMEN"
     ],
-    "expected": "The patch is rejected and Policy returns ASK_CLARIFYING_QUESTION with no fabricated execution observations."
+    "expected": "The result is ASK CLARIFYING QUESTION and no invented test observations are shown."
   },
   {
-    "name": "Evaluation backend failure is visible",
+    "name": "Backend failure is visible",
     "viewport": "desktop",
     "covers": [
-      "backend error handling",
-      "user-visible failure state"
+      "API failure handling",
+      "visible error state"
     ],
-    "description": "Verifies an evaluation API failure is surfaced instead of displaying stale evidence.",
+    "description": "Confirms the page does not leave stale evidence on screen after a failed evaluation.",
     "qa_faults": [
       {
         "method": "POST",
@@ -74,6 +70,6 @@
     "steps": [
       "Click Run OMEN"
     ],
-    "expected": "The page shows The evaluation did not complete. Run it again."
+    "expected": "Evaluation failed. Run it again. is visible."
   }
 ]
