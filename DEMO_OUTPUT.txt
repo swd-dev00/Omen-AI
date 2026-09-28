@@ -1,0 +1,24 @@
+OMEN PRE-PRODUCTION DEMO
+========================
+VISIBLE TEST (candidate): PASS
+BASELINE TEST: FAIL
+HIDDEN COUNTERFACTUAL: revoked session -> protected endpoint
+DECISION: DO_NOT_MERGE
+The candidate visible test passes, but the baseline and candidate both authorize a revoked session; the patch does not remediate that pre-existing security flaw.
+COUNTEREXAMPLE: Revoked session remains authorized
+OBSERVED: The candidate returns status 200 for token=revoked.
+EXPECTED: A revoked session must return status 401.
+
+Audit trace:
+0 EXECUTION_INTENT
+1 CONTRACT_RECONSTRUCTED
+2 PROBES_PLANNED
+3 BASELINE_EXECUTED
+4 CANDIDATE_PATCH_PREPARED
+5 VISIBLE_TESTS_EXECUTED
+6 COUNTERFACTUAL_PROBE_EXECUTED
+7 MODEL_ADJUDICATION
+8 MERGE_POLICY_EVALUATED
+
+Verified locally with the refactored three-plane implementation.
+Full suite: 19 passed.
