@@ -1,0 +1,79 @@
+[
+  {
+    "name": "OMEN executes vulnerable candidate and blocks merge",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": [
+      "POST /api/run",
+      "baseline execution",
+      "candidate execution",
+      "visible test",
+      "counterfactual probe",
+      "audit trace",
+      "policy decision"
+    ],
+    "description": "Verifies OMEN computes the observations itself for the default visible-test-only patch and blocks it on the revoked-session counterfactual.",
+    "steps": [
+      "Leave Deny expired sessions enabled and Deny revoked sessions disabled",
+      "Click Run OMEN",
+      "Inspect the observations and policy decision"
+    ],
+    "expected": "The visible expired-session test passes with candidate 401, the revoked-session counterfactual fails with candidate 200, the audit trace is populated, and the decision is DO_NOT_MERGE."
+  },
+  {
+    "name": "OMEN executes remediated candidate and allows merge",
+    "viewport": "desktop",
+    "covers": [
+      "POST /api/run",
+      "candidate rule change",
+      "safe policy decision"
+    ],
+    "description": "Verifies enabling revoked-session denial changes executed candidate behavior and the policy result.",
+    "steps": [
+      "Click Load remediated patch",
+      "Click Run OMEN",
+      "Inspect both observations and the final decision"
+    ],
+    "expected": "Both candidate observations are 401 and PASS, and the decision is SAFE_TO_MERGE."
+  },
+  {
+    "name": "OMEN blocks a candidate that fails the visible requirement",
+    "viewport": "mobile",
+    "covers": [
+      "editable candidate controls",
+      "visible requirement failure",
+      "responsive workflow",
+      "POST /api/run"
+    ],
+    "description": "Verifies disabling the expired-session guard causes OMEN to execute a failing visible test and block the candidate.",
+    "steps": [
+      "Turn off Deny expired sessions",
+      "Click Run OMEN",
+      "Inspect the visible test and final decision"
+    ],
+    "expected": "The visible expired-session candidate status is 200, the visible test shows FAIL, and the decision is DO_NOT_MERGE."
+  },
+  {
+    "name": "Evaluation API failure is visible",
+    "viewport": "desktop",
+    "covers": [
+      "backend failure handling",
+      "user-visible error state"
+    ],
+    "description": "Verifies a backend run failure is shown instead of leaving a stale result on screen.",
+    "qa_faults": [
+      {
+        "method": "POST",
+        "path": "/api/run",
+        "status": 500,
+        "body_json": {
+          "error": "simulated_failure"
+        }
+      }
+    ],
+    "steps": [
+      "Click Run OMEN"
+    ],
+    "expected": "The page shows The evaluation did not complete. Run it again."
+  }
+]
