@@ -1,6 +1,16 @@
 ##Omen-AI
 
-OMEN is the liability gate between an AI decision and the real-world action it can trigger.\n\n## Working prototype\n\n**Live:** https://omen-hmgqez.v2.appdeploy.ai/\n\nThe live prototype is executable. A judge changes the candidate authorization guards and OMEN's backend runs the baseline, visible expired-session test, and revoked-session counterfactual itself. The resulting observations are committed into a SHA-256 hash-linked audit trace before the Policy Plane issues `DO_NOT_MERGE` or `SAFE_TO_MERGE`. The deployed source is checked into `web-prototype/`.
+OMEN is the liability gate between an AI decision and the real-world action it can trigger.
+
+## Working prototype
+
+**Live:** https://omen-hmgqez.v2.appdeploy.ai/
+
+The live prototype follows the same contract described below. A judge provides a task contract and proposed unified diff against the built-in authorization fixture. OMEN applies the candidate patch, executes baseline and candidate behavior, runs the visible expired-session test and the revoked-but-unexpired counterfactual, preserves those observations in a SHA-256 hash-linked audit trace, and then allows the Policy Plane to issue the final decision.
+
+The default README demo patch fixes the visible expired-session case but leaves the revoked-session failure intact, so the result is `DO_NOT_MERGE`. The remediated patch rejects both states and returns the bounded `SAFE_TO_MERGE` outcome. Unsupported patches return `ASK_CLARIFYING_QUESTION` rather than fabricated evidence.
+
+The deployed source is checked into `web-prototype/`.
 
 OMEN started from a problem I kept running into while working on AI governance: we are giving AI systems more authority to act, but most of the accountability still begins after something goes wrong. We review logs, investigate incidents, reconstruct decisions, and then try to figure out who approved the action, what evidence existed, which policy applied, and whether the system should have been allowed to act in the first place. I wanted to move that entire conversation closer to the point of execution.
 
