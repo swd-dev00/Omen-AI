@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omen-ai"
+version = "0.1.0"
+description = "Liability gate and pre-merge computational assurance for AI-assisted software"
+requires-python = ">=3.10"
+license = {text = "Proprietary"}
+authors = [{name = "swd-dev00"}]
+dependencies = ["openai>=1.40.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+omen = "omen.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
